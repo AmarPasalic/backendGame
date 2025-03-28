@@ -1,12 +1,12 @@
-const url= "http://localhost:3000"
+const url = "http://localhost:3000"
 const underscoreWords = document.getElementById("underscoreWords")
-const guess=document.getElementById("guess")
-const restart=document.getElementById("restart")
- const input=document.getElementById("input")
+const guess = document.getElementById("guess")
+const restart = document.getElementById("restart")
+const input = document.getElementById("input")
 
- const guessletters=[]
+const guessletters = []
 
-async function fetchRandomWord(){
+async function fetchRandomWord() {
 
     const response = await fetch(`${url}/word`, {
         method: "GET",
@@ -19,28 +19,84 @@ async function fetchRandomWord(){
 
 }
 
-async function displayRandomWord(){  
-    underscoreWords.innerHTML=""
-    const obj= await fetchRandomWord()
-    const word= obj.word
-     console.log(word)
-  
-    const underscore="_  "
-    underscoreWords.innerHTML=underscore.repeat(word.length)
-     
+
+async function handleLetter(value) {
+
+    const response = await fetch(`${url}/check`, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ value }),
+    });
+    return response.json()
+
+}
+
+
+
+async function displayRandomWord() {
+    underscoreWords.innerHTML = ""
+
+    const obj = await fetchRandomWord()
+
+    const word = obj.word
+    const indexes = obj.indexes
+    if(indexes.length===word.length){
+        console.log("You won")
+       
+    }
+    console.log(word)
+    console.log(indexes)
+    const underscore = " _ "
+    let displayWord = ""
+    for (let i = 0; i < word.length; i++) {
+        if (indexes.includes(i)) {
+            displayWord += word[i];
+        }
+        else {
+            displayWord += underscore
+        }
+
+    }
+    underscoreWords.innerHTML = displayWord
+
+
 }
 
 document.addEventListener("DOMContentLoaded", displayRandomWord)
 
-function handleGuessWords(){
-const value= input.value
-if(value.length>1) console.log("You must enter one letter")
-if(!guessletters.includes(input.value)){
-    guessletters.push(input.value)
-}
 
-console.log(guessletters) 
+async function handleGuessWords() {
+    const letter = input.value.toUpperCase().trim(); 
+    if (!letter || (letter.length>1 && letter==!"LJ" && letter==!"NJ") ) {
+        console.log("No letter entered!");
+        return;
+    }
+    const res = await handleLetter(letter)
+    console.log(res)
+    input.value = ""
+    displayRandomWord()
 }
 
 
 guess.addEventListener("click", handleGuessWords)
+
+
+
+
+async function newGame(){
+ const response = await fetch(`${url}/newgame`, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+        }
+    });
+    const data = await response.json();
+    displayRandomWord()
+    return data
+}
+
+
+
+restart.addEventListener("click", newGame)
